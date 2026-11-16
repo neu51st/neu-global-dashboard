@@ -12,7 +12,7 @@ const PH_REGIONS=['Nationwide (All PH Regions)','National Capital Region (NCR)',
 const FLAGS={'Philippines':'🇵🇭','Japan':'🇯🇵','South Korea':'🇰🇷','Singapore':'🇸🇬','Malaysia':'🇲🇾','Thailand':'🇹🇭'};
 const STAKEHOLDERS=['Students','Faculty & Researchers','MSMEs & Entrepreneurs','University Administrators'];
 const STATUS_OPTIONS=['OPEN','CLOSED','CHECK CURRENT INTAKE','ONGOING PROGRAM','UPCOMING'];
-const state={me:null,opportunities:[],settings:NEU_DEFAULT_SETTINGS,users:[],requests:[],bookmarks:[],revisions:[],reports:[],feedback:[],activity:[],page:'overview',tab:CATEGORIES[0].id,query:'',country:'',region:'',sort:'recent',compare:[],onlySaved:false,manageTab:'records',manageQuery:'',includeArchived:false,working:false,authMode:'login',pendingEmail:'',authRecovery:false};
+const state={setupError:'',me:null,opportunities:[],settings:NEU_DEFAULT_SETTINGS,users:[],requests:[],bookmarks:[],revisions:[],reports:[],feedback:[],activity:[],page:'overview',tab:CATEGORIES[0].id,query:'',country:'',region:'',sort:'recent',compare:[],onlySaved:false,manageTab:'records',manageQuery:'',includeArchived:false,working:false,authMode:'login',pendingEmail:'',authRecovery:false};
 const $=s=>document.querySelector(s);
 const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtDate=s=>s?new Date(s.slice(0,10)+'T00:00:00').toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}):'Not specified';
@@ -41,7 +41,8 @@ function needLogin(){showLogin();toast('Sign in to access GOID.',true);}
 const GOID_YEARS=['1st Year','2nd Year','3rd Year','4th Year','5th Year','Graduate / Postgraduate','Other'];
 function renderAuth(mode='login'){
  state.authMode=mode;const x=$('#auth-view');if(!x)return;
- if(mode==='signup')x.innerHTML=`<h2 class="auth-title">Join GOID ✨</h2><p class="auth-subtitle">Create your account to explore opportunities, save items, and ask for guidance.</p><form id="signup-form" class="login-form"><div class="registration-grid"><label>Full name<input name="full_name" autocomplete="name" maxlength="120" placeholder="Full name" required></label><label>College / Department<input name="college" autocomplete="organization" maxlength="120" placeholder="Your college" required></label></div><div class="registration-grid"><label>Year level<select name="year_level" required><option value="">Choose year level</option>${GOID_YEARS.map(y=>`<option>${escapeHTML(y)}</option>`).join('')}</select></label><label>Email address<input type="email" name="email" autocomplete="email" placeholder="Your email" required></label></div><div class="registration-grid"><label>Contact number <span class="muted tiny">(optional)</span><input name="contact_number" type="tel" maxlength="30" placeholder="09..." autocomplete="tel"></label><label>Telegram <span class="muted tiny">(optional)</span><input name="telegram_username" maxlength="50" placeholder="@username"></label></div><div class="registration-grid"><label>Password<input name="password" type="password" minlength="10" autocomplete="new-password" placeholder="At least 10 characters" required></label><label>Confirm password<input name="confirm_password" type="password" minlength="10" autocomplete="new-password" required></label></div><label class="privacy-check"><input type="checkbox" name="privacy_acknowledged" required><span>I have read the privacy notice. GOID stores my registration details to provide account access and assistance. Contact information is visible only to authorized personnel handling my requests. <a href="#" data-action="privacy" style="color:#6760b4">Read privacy notice</a>.</span></label><button type="submit" class="btn primary full">Create account →</button></form><div class="auth-links"><button class="auth-link" data-action="auth-login" type="button">Already registered? Sign in</button></div>`;
+ if(mode==='setup')x.innerHTML=`<h2 class="auth-title">Database setup needs a repair</h2><p class="auth-subtitle">Your account may have signed in successfully, but the dashboard couldn't load because the GOID database upgrade is incomplete.</p><div class="auth-prompt"><b>What to do:</b> In your existing Supabase project, open <b>SQL Editor → New Query</b>. Run <b>RUN_THIS_IN_SUPABASE_SQL_EDITOR.sql</b> from the repair package. Do not delete your accounts or database.<br><br><b>Technical detail:</b> ${escapeHTML(state.setupError||'Database schema unavailable')}</div><button type="button" class="btn primary full" data-action="retry-loading">Retry loading dashboard</button><div class="auth-links"><button type="button" class="auth-link" data-action="recovery-logout">Sign out</button></div>`;
+ else if(mode==='signup')x.innerHTML=`<h2 class="auth-title">Join GOID ✨</h2><p class="auth-subtitle">Create your account to explore opportunities, save items, and ask for guidance.</p><form id="signup-form" class="login-form"><div class="registration-grid"><label>Full name<input name="full_name" autocomplete="name" maxlength="120" placeholder="Full name" required></label><label>College / Department<input name="college" autocomplete="organization" maxlength="120" placeholder="Your college" required></label></div><div class="registration-grid"><label>Year level<select name="year_level" required><option value="">Choose year level</option>${GOID_YEARS.map(y=>`<option>${escapeHTML(y)}</option>`).join('')}</select></label><label>Email address<input type="email" name="email" autocomplete="email" placeholder="Your email" required></label></div><div class="registration-grid"><label>Contact number <span class="muted tiny">(optional)</span><input name="contact_number" type="tel" maxlength="30" placeholder="09..." autocomplete="tel"></label><label>Telegram <span class="muted tiny">(optional)</span><input name="telegram_username" maxlength="50" placeholder="@username"></label></div><div class="registration-grid"><label>Password<input name="password" type="password" minlength="10" autocomplete="new-password" placeholder="At least 10 characters" required></label><label>Confirm password<input name="confirm_password" type="password" minlength="10" autocomplete="new-password" required></label></div><label class="privacy-check"><input type="checkbox" name="privacy_acknowledged" required><span>I have read the privacy notice. GOID stores my registration details to provide account access and assistance. Contact information is visible only to authorized personnel handling my requests. <a href="#" data-action="privacy" style="color:#6760b4">Read privacy notice</a>.</span></label><button type="submit" class="btn primary full">Create account →</button></form><div class="auth-links"><button class="auth-link" data-action="auth-login" type="button">Already registered? Sign in</button></div>`;
  else if(mode==='verify')x.innerHTML=`<h2 class="auth-title">Check your inbox ✉</h2><p class="auth-subtitle">If the address can be registered, a verification email will be sent to <b>${escapeHTML(state.pendingEmail||'your email')}</b>. Open the link, then sign in.</p><div class="auth-prompt">If you can't find the email, check Spam or Junk. Email delivery requires a configured SMTP provider.</div><form id="resend-form" class="login-form"><label>Email address<input type="email" name="email" required value="${escapeHTML(state.pendingEmail||'')}"></label><button class="btn soft full" type="submit">Resend verification email</button></form><button class="auth-link" type="button" data-action="auth-login">Return to sign in</button>`;
  else if(mode==='reset-sent')x.innerHTML=`<h2 class="auth-title">Check your email ✉</h2><p class="auth-subtitle">If an account exists for <b>${escapeHTML(state.pendingEmail||'that address')}</b>, a password-reset link has been sent. Check your inbox and Spam folder.</p><button class="auth-link" type="button" data-action="auth-login">Return to sign in</button>`;
  else if(mode==='forgot')x.innerHTML=`<h2 class="auth-title">Reset password 🔐</h2><p class="auth-subtitle">Enter your registered email to request a password-reset link.</p><form id="forgot-form" class="login-form"><label>Email address<input name="email" type="email" autocomplete="email" required></label><button class="btn primary full" type="submit">Send password reset</button></form><button class="auth-link" type="button" data-action="auth-login">Back to sign in</button>`;
@@ -61,13 +62,24 @@ async function boot(refresh=false){
  try{
   const result=await neuApi('/api/bootstrap');const oldUser=state.me?.id;
   Object.assign(state,{me:result.me,opportunities:result.opportunities,settings:result.settings,users:result.users,requests:result.requests,bookmarks:result.bookmarks,revisions:result.revisions,reports:result.reports,feedback:result.feedback,activity:result.activity});
-  if(!result.authenticated||!state.me){showLogin(state.authRecovery?'new-password':'login');return;}
+  if(!result.authenticated||!state.me){showLogin(state.authRecovery?'new-password':'login');return false;}
   if(oldUser!==state.me?.id){state.compare=[];state.page='overview';}
   if(!roleAtLeast('staff')&&['manage','settings'].includes(state.page))state.page='overview';
   if(!roleAtLeast('student')&&['saved','requests'].includes(state.page))state.page='overview';
-  if(state.authRecovery){showLogin('new-password');return;}
+  if(state.authRecovery){showLogin('new-password');return true;}
+  state.setupError='';
+  $('#config-status').textContent='Create your account, verify your email, then sign in. Opportunities and personal features are available after sign-in.';
   shellUser();navigation();if(!refresh||$('#modal').classList.contains('hidden'))render();
- }catch(e){if(!refresh){showLogin();$('#config-status').textContent='Setup error: '+e.message;}toast(e.message,true);console.warn(e);}finally{state.working=false;}
+  return true;
+ }catch(e){
+  const msg=String(e.message||e);
+  const schemaIssue=/profiles\.(college|year_level|contact_number|telegram_username|preferred_contact)|column .* does not exist|relation .* does not exist|Could not find the .*column|schema cache|neu_admin_update_user|assistance_requests/i.test(msg);
+  if(schemaIssue){state.setupError=msg;showLogin('setup');$('#config-status').textContent='Your GOID database needs the provided SQL repair. Your accounts and opportunities have not been deleted.';}
+  else if(!refresh){showLogin();$('#config-status').textContent='Could not finish sign-in: '+msg;}
+  toast(schemaIssue?'Database upgrade required. See the setup instructions.':msg,true);
+  console.warn('GOID dashboard loading:',e);
+  return false;
+ }finally{state.working=false;}
 }
 function navigation(){const pages=[['overview','⌂','Overview'],['explore','◈','Explore opportunities'],['compare','▣','Compare'],['insights','◫','Insights']];
  if(roleAtLeast('student'))pages.push(['saved','♡','Saved opportunities'],['requests','✉','My assistance'],['profile','♙','My profile']);
@@ -196,7 +208,8 @@ document.addEventListener('click',async e=>{
   if(action==='auth-forgot'){showLogin('forgot');return;}
   if(action==='privacy'){e.preventDefault();showPrivacy();return;}
 
- if(action==='logout'){await neuApi('/api/logout','POST');await boot();toast('You have signed out.');return;}
+ if(action==='logout'||action==='recovery-logout'){await neuApi('/api/logout','POST');state.setupError='';await boot();toast('You have signed out.');return;}
+ if(action==='retry-loading'){const loaded=await boot();if(loaded)toast('Welcome to GOID! ✨');return;}
  if(action==='close-modal'){closeModal();return;}
  if(action==='guide'){guide();return;}
  if(action==='category'){state.tab=el.dataset.sector;render();return;}
@@ -248,7 +261,7 @@ document.addEventListener('submit',async e=>{
  e.preventDefault();const btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
  try{
  const d=Object.fromEntries(new FormData(f).entries());
-  if(f.id==='login-form'){await neuApi('/api/login','POST',d);await boot();toast('Welcome to GOID! ✨');}
+  if(f.id==='login-form'){await neuApi('/api/login','POST',d);const loaded=await boot();if(loaded)toast('Welcome to GOID! ✨');}
   else if(f.id==='signup-form'){
     if(d.password!==d.confirm_password)throw Error('Your passwords do not match.');
     if(!d.privacy_acknowledged)throw Error('Please read the privacy notice.');
