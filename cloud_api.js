@@ -14,7 +14,7 @@ const NEU_RUBRIC={
  difficulty:[['SIMPLE','Few documented steps and minimal prerequisites',5],['ROUTINE','Standard documented requirements',4],['MODERATE','Multiple requirements and some coordination',3],['COMPLEX','Extensive documents, partners or procedures',2],['VERY_COMPLEX','Very demanding or inaccessible process',1]]
 };
 const NEU_PUBLIC_SELECT='id,title,country,region,sector,stakeholder,description,eligibility,funding,deadline,application_status,source_org,source_url,application_url,contact_url,requirements,risks,verification,last_verified,archived,evidence,created_at';
-const NEU_SAFE_FIELDS=['title','country','region','sector','stakeholder','description','eligibility','funding','deadline','application_status','source_org','source_url','application_url','contact_url','requirements','risks','evidence','decision'];
+const NEU_SAFE_FIELDS=['title','country','region','sector','stakeholder','description','eligibility','funding','deadline','application_status','source_org','source_url','application_url','contact_url','requirements','risks','evidence','decision','match_data'];
 let neuClient=null, neuChannel=null, neuRefreshHandle=null, neuPollingHandle=null;
 function neuConfigured(){const x=window.NEU_CONFIG||{};return /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(x.url||'') && /^(sb_publishable_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9._-]+)$/.test(x.publishableKey||'');}
 function neuGetClient(){
@@ -37,6 +37,17 @@ function neuClean(input,update=false){
  if('country'in d&&d.country!=='Philippines')d.region='';
  if('decision'in d&&!['PURSUE','MONITOR','INVESTIGATE FURTHER','REJECT'].includes(d.decision))throw Error('Choose a valid decision status.');
  if('deadline'in d)d.deadline=d.deadline||null;
+ if('match_data' in d){
+  const m=d.match_data;
+  if(!m||Array.isArray(m)||typeof m!=='object')throw Error('Opportunity matching information must be an object.');
+  const allowed={intended_users:['Student','Educator','Researcher','Industry Professional','Entrepreneur / MSME Owner','Community Member','All','Not Disclosed'],types:['Scholarships','Training','Internships','Research Grants','Exchange Programs','Partnerships','Business Funding','Trade / Export Programs','Community Development','Not Disclosed'],funding_coverage:['Fully Funded','Partially Funded','Self-Funded','Not Disclosed'],expenses:['Registration / Application Fees','Travel','Accommodation','Other Participation Costs','None','Not Disclosed'],benefits:['Financial Assistance','Skills Development','Research Support','Career Experience','Networking','Business Growth','International Exposure','Not Disclosed'],formats:['Online','Face-to-Face','Hybrid','Not Disclosed'],documents:['Academic Records','Resume / CV','Portfolio / Proposal','Recommendation Letters','English Proficiency Proof','Passport','Other Documents','Not Disclosed'],methods:['Direct Application','School / Organization Nomination','Invitation-Based','Not Disclosed'],deadline_kind:['Fixed Deadline','No Fixed Deadline','Not Yet Announced']};
+  for(const [k,values] of Object.entries(m)){
+   if(!allowed[k])throw Error('Invalid opportunity matching field: '+k);
+   const v=m[k];if(Array.isArray(v)){if(v.length>values.length||v.some(x=>!values.includes(x))||((v.includes('Not Disclosed')||v.includes('All')||v.includes('None'))&&v.length>1))throw Error('Invalid or contradictory selections for '+k);}
+   else if(!values.includes(v)||!['funding_coverage','deadline_kind'].includes(k))throw Error('Invalid selection for '+k);
+  }
+  if('deadline'in d && (m.deadline_kind==='No Fixed Deadline'||m.deadline_kind==='Not Yet Announced'))d.deadline=null;
+ }
  return d;
 }
 function neuScore(o,settings=NEU_DEFAULT_SETTINGS){
@@ -45,11 +56,16 @@ function neuScore(o,settings=NEU_DEFAULT_SETTINGS){
   const item=evidence[k]||{},found=NEU_RUBRIC[k].find(v=>v[0]===item.code);
   return {key:k,label:k==='benefit'?'Potential benefit':k==='risk'?'Manageable risk':k==='difficulty'?'Ease of implementation':k==='relevance'?'Strategic relevance':'Feasibility',code:item.code||'',source_url:item.source_url||'',description:found?.[1]||'Not documented',rating:found?.[2]||null,weight:Number(settings.weights[k]||0)};
  });
+ const documented=lines.filter(x=>x.rating&&neuLink(x.source_url));
  const missing=lines.filter(x=>!x.rating||!neuLink(x.source_url));
- const assessed=missing.length===0;
- const score=assessed?Math.round(lines.reduce((sum,l)=>sum+l.rating*l.weight/5,0)*10)/10:null;
+ const totalWeight=lines.reduce((a,x)=>a+x.weight,0);
+ const knownWeight=documented.reduce((a,x)=>a+x.weight,0);
+ const completeness=totalWeight?Math.round(knownWeight/totalWeight*100):0;
+ // Unknown evidence contributes neither zero points nor imaginary positive points.
+ // A partial score is shown only if enough of the documented rubric is present.
+ const score=knownWeight>0&&completeness>=50?Math.round(documented.reduce((sum,l)=>sum+l.rating*l.weight/5,0)/knownWeight*1000)/10:null;
  const priority=score===null?'NOT ASSESSED':score>=settings.high_threshold?'HIGH':score>=settings.medium_threshold?'MEDIUM':'LOW';
- return {...o,evidence,score,priority,assessment:{assessed,missing:missing.map(x=>x.key),lines},is_demo:false};
+ return {...o,evidence,score,priority,assessment:{assessed:missing.length===0,completeness,missing:missing.map(x=>x.key),lines},is_demo:false};
 }
 async function neuUser(){const {data,error}=await neuGetClient().auth.getUser();if(error)return null;return data?.user||null;}
 async function neuRole(required){const user=await neuUser();if(!user)throw Error('Sign in with your authorized account.');
@@ -207,10 +223,10 @@ async function neuApi(path,method='GET',body={}){
  throw Error('Unsupported operation: '+path);
 }
 function neuDownloadExport(type,records){
- const keys=['title','country','region','sector','stakeholder','description','eligibility','funding','deadline','application_status','source_org','source_url','application_url','contact_url','requirements','risks','verification','reviewer','last_verified','score','priority'];
+ const keys=['title','country','region','sector','stakeholder','description','eligibility','funding','deadline','application_status','source_org','source_url','application_url','contact_url','requirements','risks','verification','reviewer','last_verified','score','priority','match_data'];
  const rows=records||[];let content,mime,name;
  if(type==='csv'){
-  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const cell=v=>'"'+String(v&&typeof v==='object'?JSON.stringify(v):v??'').replace(/"/g,'""')+'"';
   content='\ufeff'+keys.join(',')+'\r\n'+rows.map(o=>keys.map(k=>cell(o[k])).join(',')).join('\r\n');mime='text/csv;charset=utf-8';name='neu-opportunities.csv';
  }else{
   content=JSON.stringify({exported_at:new Date().toISOString(),opportunities:rows.map(o=>Object.fromEntries([...keys,'evidence'].map(k=>[k,o[k]])))},null,2);
