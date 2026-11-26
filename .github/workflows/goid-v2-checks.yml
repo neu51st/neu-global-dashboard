@@ -1,0 +1,24 @@
+name: GOID V2 checks
+
+on:
+  push:
+    branches: [main, goid-redesign]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          node --check goid-model.js
+          node --check goid-app.js
+      - name: Verify release safeguards and required features
+        run: node scripts/verify-goid-release.mjs
+      - name: Test matching and campus directory
+        run: node --test tests/goid-model.test.mjs
