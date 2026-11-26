@@ -50,7 +50,7 @@ test('student recommendations are limited to the top 10 verified, active, non-de
   records.push({ ...baseOpportunity, id: 'demo', is_demo: true, title: 'Demo' });
   records.push({ ...baseOpportunity, id: 'archived', archived: true, title: 'Archived' });
   records.push({ ...baseOpportunity, id: 'pending', verification: 'PENDING VERIFICATION', title: 'Pending' });
-  records.push({ ...baseOpportunity, id: 'closed', deadline: '2000-01-01', title: 'Closed' });
+  records.push({ ...baseOpportunity, id: 'closed', deadline: '2000-01-01', match_data: { ...baseOpportunity.match_data, deadline_kind: 'Fixed Deadline' }, title: 'Closed' });
 
   const result = Array.from(rank(records, preferences));
   assert.equal(result.length, 10);
