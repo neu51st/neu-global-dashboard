@@ -16,7 +16,7 @@ const known=v=>v!==undefined&&v!==null&&v!==''&&!['Not Disclosed','Not Applicabl
 const meta=o=>o.match_data&&typeof o.match_data==='object'&&!Array.isArray(o.match_data)?o.match_data:{};
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const closed=o=>/CLOSED|EXPIRED/i.test(o.application_status||'')||!!(o.deadline&&o.deadline<today()&&meta(o).deadline_kind!=='No Fixed Deadline');
-const published=o=>o.verification==='VERIFIED'&&!o.archived;
+const published=o=>o.verification==='VERIFIED'&&!o.archived&&!o.is_demo;
 const dayLabel=d=>d?new Date(d.slice(0,10)+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'Not disclosed';
 const deadline=o=>meta(o).deadline_kind==='No Fixed Deadline'?'No fixed deadline':o.deadline?dayLabel(o.deadline):'Deadline not announced';
 const locationText=o=>o.country==='Philippines'?[o.region,o.country].filter(Boolean).join(', '):o.country;
