@@ -62,7 +62,7 @@ assert.equal(/UPDATE public\.opportunities SET evidence=/i.test(migration), fals
 assert.equal(/match_data=p->'match_data',evidence=/i.test(migration), false);
 assert.ok(dryRun.includes('ROLLBACK;'));
 
-assert.equal(/service[_-]?role\\s*[:=]\\s*['\"]/.test(config), false);
+assert.equal(/service[_-]?role\s*[:=]\s*['"]/.test(config), false);
 assert.equal(/smtp[_-]?password/i.test(config), false);
 
 console.log('GOID V2 release checks passed.');
