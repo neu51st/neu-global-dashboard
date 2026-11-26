@@ -47,15 +47,15 @@ DROP POLICY IF EXISTS goid_photo_insert ON storage.objects;
 CREATE POLICY goid_photo_insert ON storage.objects FOR INSERT TO authenticated WITH CHECK(bucket_id='goid-profile-photos' AND public.neu_role()<>'' AND (storage.foldername(name))[1]=auth.uid()::text);
 DROP POLICY IF EXISTS goid_photo_delete ON storage.objects;
 CREATE POLICY goid_photo_delete ON storage.objects FOR DELETE TO authenticated USING(bucket_id='goid-profile-photos' AND public.neu_role()<>'' AND (storage.foldername(name))[1]=auth.uid()::text);
-CREATE OR REPLACE FUNCTION public.goid_valid_college(p_campus text,p_college text) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path='' AS $
- SELECT CASE p_campus
+CREATE OR REPLACE FUNCTION public.goid_valid_college(p_campus text,p_college text) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path='' AS $$
+ SELECT coalesce(CASE p_campus
   WHEN 'Quezon City — Main Campus' THEN p_college=ANY(ARRAY['College of Accountancy','College of Arts and Sciences','College of Business Administration','College of Communication','College of Criminology','College of Education','College of Engineering & Architecture','College of Engineering and Architecture','College of Informatics & Computing Studies','College of Informatics and Computing Studies','College of Law','College of Medicine','College of Medical Technology','College of Midwifery','College of Music','College of Nursing','College of Physical Therapy','College of Respiratory Therapy','School of International Relations','School of Graduate Studies','Other / Not Applicable'])
   WHEN 'Pampanga Campus' THEN p_college=ANY(ARRAY['College of Arts and Sciences','College of Accountancy','College of Business Administration','College of Education','College of Informatics & Computing Studies','College of Informatics and Computing Studies','Other / Not Applicable'])
   WHEN 'Lipa Campus' THEN p_college=ANY(ARRAY['College of Accountancy','College of Business Administration','College of Education','College of Informatics & Computing Studies','College of Informatics and Computing Studies','Other / Not Applicable'])
   WHEN 'General Santos City Campus' THEN p_college=ANY(ARRAY['College of Accountancy','College of Business Administration','Other / Not Applicable'])
   WHEN 'Rizal Campus' THEN p_college=ANY(ARRAY['College of Agriculture','Other / Not Applicable'])
-  ELSE false END
-$;
+  ELSE false END,false)
+$$;
 -- Do not guess split names or campus for existing users. Let them complete their profile.
 CREATE OR REPLACE FUNCTION public.neu_new_user() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE m jsonb:=coalesce(new.raw_user_meta_data,'{}'::jsonb); k text;
