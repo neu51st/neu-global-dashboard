@@ -12,7 +12,7 @@ const [index, app, model, css, config, migration, dryRun] = await Promise.all([
 assert.ok(index.includes('goid-model.js?v=20261127'));
 assert.ok(index.includes('goid-app.js?v=20261127'));
 assert.ok(index.includes('assets/neu-logo.png'));
-assert.ok(index.includes('assets/neu-wordmark.png'));
+assert.ok(app.includes('assets/neu-wordmark.png'));
 
 for (const asset of [
   'assets/neu-logo.png',
