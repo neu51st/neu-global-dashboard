@@ -36,3 +36,8 @@ The website redesign is being prepared on the `goid-redesign` pull-request branc
 - Confirm that profile photos are private and readable only by the owner, Admin, or Staff assigned to the relevant assistance request.
 
 Do not merge/deploy until the migration is confirmed successful and these role-based checks pass.
+
+
+## Official campus/college directory
+
+The registration and profile selectors use the campus and college combinations listed by New Era University's official [Academics page](https://neu.edu.ph/main/academics), cross-checked with the official [Pampanga](https://neu.edu.ph/main/campus/pampanga), [Lipa](https://neu.edu.ph/main/campus/lipa), [General Santos](https://neu.edu.ph/main/campus/gen-san), and [Rizal](https://neu.edu.ph/main/campus/rizal) branch pages. The General Santos branch page currently lists College of Accountancy and College of Business Administration; Rizal's listed college offering is College of Agriculture. The application and database validate the selected college against the selected campus. Legacy college labels are accepted only for existing profiles so users can review and update their records without losing the old value.
