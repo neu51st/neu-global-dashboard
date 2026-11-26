@@ -46,15 +46,15 @@ DROP POLICY IF EXISTS goid_photo_insert ON storage.objects;
 CREATE POLICY goid_photo_insert ON storage.objects FOR INSERT TO authenticated WITH CHECK(bucket_id='goid-profile-photos' AND public.neu_role()<>'' AND (storage.foldername(name))[1]=auth.uid()::text);
 DROP POLICY IF EXISTS goid_photo_delete ON storage.objects;
 CREATE POLICY goid_photo_delete ON storage.objects FOR DELETE TO authenticated USING(bucket_id='goid-profile-photos' AND public.neu_role()<>'' AND (storage.foldername(name))[1]=auth.uid()::text);
-CREATE OR REPLACE FUNCTION public.goid_valid_college(p_campus text,p_college text) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path='' AS $
+CREATE OR REPLACE FUNCTION public.goid_valid_college(p_campus text,p_college text) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path='' AS '
  SELECT coalesce(CASE p_campus
-  WHEN 'Quezon City — Main Campus' THEN p_college=ANY(ARRAY['College of Accountancy','College of Arts and Sciences','College of Business Administration','College of Communication','College of Criminology','College of Education','College of Engineering & Architecture','College of Engineering and Architecture','College of Informatics & Computing Studies','College of Informatics and Computing Studies','College of Law','College of Medicine','College of Medical Technology','College of Midwifery','College of Music','College of Nursing','College of Physical Therapy','College of Respiratory Therapy','School of International Relations','School of Graduate Studies','Other / Not Applicable'])
-  WHEN 'Pampanga Campus' THEN p_college=ANY(ARRAY['College of Arts and Sciences','College of Accountancy','College of Business Administration','College of Education','College of Informatics & Computing Studies','College of Informatics and Computing Studies','Other / Not Applicable'])
-  WHEN 'Lipa Campus' THEN p_college=ANY(ARRAY['College of Accountancy','College of Business Administration','College of Education','College of Informatics & Computing Studies','College of Informatics and Computing Studies','Other / Not Applicable'])
-  WHEN 'General Santos City Campus' THEN p_college=ANY(ARRAY['College of Accountancy','College of Business Administration','Other / Not Applicable'])
-  WHEN 'Rizal Campus' THEN p_college=ANY(ARRAY['College of Agriculture','Other / Not Applicable'])
+  WHEN ''Quezon City — Main Campus'' THEN p_college=ANY(ARRAY[''College of Accountancy'',''College of Arts and Sciences'',''College of Business Administration'',''College of Communication'',''College of Criminology'',''College of Education'',''College of Engineering & Architecture'',''College of Engineering and Architecture'',''College of Informatics & Computing Studies'',''College of Informatics and Computing Studies'',''College of Law'',''College of Medicine'',''College of Medical Technology'',''College of Midwifery'',''College of Music'',''College of Nursing'',''College of Physical Therapy'',''College of Respiratory Therapy'',''School of International Relations'',''School of Graduate Studies'',''Other / Not Applicable''])
+  WHEN ''Pampanga Campus'' THEN p_college=ANY(ARRAY[''College of Arts and Sciences'',''College of Accountancy'',''College of Business Administration'',''College of Education'',''College of Informatics & Computing Studies'',''College of Informatics and Computing Studies'',''Other / Not Applicable''])
+  WHEN ''Lipa Campus'' THEN p_college=ANY(ARRAY[''College of Accountancy'',''College of Business Administration'',''College of Education'',''College of Informatics & Computing Studies'',''College of Informatics and Computing Studies'',''Other / Not Applicable''])
+  WHEN ''General Santos City Campus'' THEN p_college=ANY(ARRAY[''College of Accountancy'',''College of Business Administration'',''Other / Not Applicable''])
+  WHEN ''Rizal Campus'' THEN p_college=ANY(ARRAY[''College of Agriculture'',''Other / Not Applicable''])
   ELSE false END,false)
-$;
+';
 -- Do not guess split names or campus for existing users. Let them complete their profile.
 CREATE OR REPLACE FUNCTION public.neu_new_user() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE m jsonb:=coalesce(new.raw_user_meta_data,'{}'::jsonb); k text;
@@ -65,7 +65,7 @@ BEGIN
  RETURN new;
 END $$;
 -- User-editable profile fields are explicitly allowlisted; role and active remain administrator-only.
--- The V2 profile RPC validates campus/college; the legacy self-update trigger remains narrowly compatible with the live main-branch form.
+-- The V2 profile RPC validates campus/college; legacy self-updates remain narrowly compatible during rollout.
 CREATE OR REPLACE FUNCTION public.goid_update_profile(p_fields jsonb) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE p public.profiles%ROWTYPE; nm text;
 BEGIN
@@ -88,15 +88,16 @@ BEGIN
  UPDATE public.profiles SET photo_path=p_path,avatar_key=p_avatar,updated_at=now() WHERE id=auth.uid();
 END $$;
 -- A trigger protects sensitive profile attributes even if old column-level grants remain.
-CREATE OR REPLACE FUNCTION public.goid_profile_guard() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $
+CREATE OR REPLACE FUNCTION public.goid_profile_guard() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS '
 BEGIN
- IF current_user IN ('authenticated','anon') AND
-   (to_jsonb(NEW)-ARRAY['display_name','college','year_level','contact_number','telegram_username','preferred_contact','updated_at']) IS DISTINCT FROM
-   (to_jsonb(OLD)-ARRAY['display_name','college','year_level','contact_number','telegram_username','preferred_contact','updated_at']) THEN
-   RAISE EXCEPTION 'Use the authorized profile or account management function.' USING ERRCODE='42501';
+ IF current_user IN (''authenticated'',''anon'') AND
+   (to_jsonb(NEW)-ARRAY[''display_name'',''college'',''year_level'',''contact_number'',''telegram_username'',''preferred_contact'',''updated_at'']) IS DISTINCT FROM
+   (to_jsonb(OLD)-ARRAY[''display_name'',''college'',''year_level'',''contact_number'',''telegram_username'',''preferred_contact'',''updated_at'']) THEN
+   RAISE EXCEPTION ''Use the authorized profile or account management function.'' USING ERRCODE=''42501'';
  END IF;
  RETURN NEW;
-END $;
+END
+';
 DROP TRIGGER IF EXISTS goid_profile_guard_trigger ON public.profiles;
 CREATE TRIGGER goid_profile_guard_trigger BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.goid_profile_guard();
 -- Existing admin RPC retains role checks and self-protection.
@@ -358,7 +359,7 @@ DROP POLICY IF EXISTS neu_assistance_add ON public.assistance_requests;
 CREATE POLICY neu_assistance_add ON public.assistance_requests FOR INSERT TO authenticated WITH CHECK(requester_id=auth.uid() AND public.neu_role()<>'' AND status='NEW' AND assigned_to IS NULL AND EXISTS(SELECT 1 FROM public.opportunities o WHERE o.id=opportunity_id AND o.verification='VERIFIED' AND NOT o.archived));
 -- Public RPC surface: remove implicit PUBLIC execute, allow only explicitly authorized functions.
 DO $$ DECLARE f record; BEGIN
- FOR f IN SELECT p.oid::regprocedure AS sig FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('goid_can_read_photo','goid_update_profile','goid_update_photo','goid_profile_guard','goid_log_actor','goid_validate_record','goid_apply_record','goid_submit_opportunity','goid_verify_decision','goid_review_opportunity','goid_review_edit','goid_archive_opportunity','goid_request_archive','goid_claim_request','goid_respond','goid_review_feedback','goid_staff_directory','goid_request_profiles','goid_analytics','goid_emit','goid_emit_roles','goid_mark_notifications','goid_notify_opportunity','goid_notify_revision','goid_notify_assistance','goid_notify_support','goid_notify_profile','goid_deadline_reminders') LOOP
+ FOR f IN SELECT p.oid::regprocedure AS sig FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('goid_valid_college','goid_can_read_photo','goid_update_profile','goid_update_photo','goid_profile_guard','goid_log_actor','goid_validate_record','goid_apply_record','goid_submit_opportunity','goid_verify_decision','goid_review_opportunity','goid_review_edit','goid_archive_opportunity','goid_request_archive','goid_claim_request','goid_respond','goid_review_feedback','goid_staff_directory','goid_request_profiles','goid_analytics','goid_emit','goid_emit_roles','goid_mark_notifications','goid_notify_opportunity','goid_notify_revision','goid_notify_assistance','goid_notify_support','goid_notify_profile','goid_deadline_reminders') LOOP
  EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated',f.sig);
  END LOOP; END $$;
 CREATE OR REPLACE FUNCTION public.goid_update_scoring_settings(p_weights jsonb,p_high integer,p_medium integer) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
