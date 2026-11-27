@@ -22,3 +22,38 @@ jobs:
         run: node scripts/verify-goid-release.mjs
       - name: Test matching and campus directory
         run: node --test tests/goid-model.test.mjs tests/goid-dashboard.test.mjs
+
+  sql-migration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci_disposable_only
+          POSTGRES_DB: goid_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d goid_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ci_disposable_only
+      PGDATABASE: goid_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute guarded SQL against disposable PostgreSQL
+        run: |
+          set -e
+          psql -X -v ON_ERROR_STOP=1 -f tests/fixtures/goid-v3-disposable.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/GOID_V3_ONBOARDING_DRY_RUN.sql
+          test "$(psql -XAtc "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='goid_profile_version'")" = 0
+          psql -X -v ON_ERROR_STOP=1 -f supabase/GOID_V3_ONBOARDING_MIGRATION.sql
+          test "$(psql -XAtc "SELECT goid_profile_version FROM public.profiles")" = 0
+          test "$(psql -XAtc "SELECT answers->'users'->>0 FROM public.goid_user_preferences")" = Student
+          test "$(psql -XAtc "SELECT count(*) FROM public.opportunities")" = 1
+          test "$(psql -XAtc "SELECT to_regprocedure('public.goid_decide_archive_v3(uuid,text,text)') IS NOT NULL")" = t
