@@ -212,15 +212,23 @@ tbody tr:hover td{background:#f8fafc}
 }
 
 
-/* Campus photo is a continuous page background, never a separate image card. */
-.auth{background:linear-gradient(115deg,#f0f5f9 0%,#f7f9fc 57%,#fff 100%)}
-.auth:before{display:block;inset:auto 0 0 0;width:100%;height:76%;background:url("assets/neu-main-campus.jpg") 50% 56%/cover no-repeat;opacity:.48;filter:blur(1.25px);mask-image:linear-gradient(to bottom,transparent 0%,transparent 8%,#000 49%,#000 100%),linear-gradient(to right,#000 0%,#000 43%,transparent 88%);mask-composite:intersect;pointer-events:none}
-.auth:after{background:repeating-radial-gradient(ellipse at 110% -22%,transparent 0 115px,#28558106 116px 117px,transparent 118px 150px);mask-image:linear-gradient(to left,#000,transparent 60%);pointer-events:none}
-.auth-intro{align-self:start;padding-top:clamp(24px,5vh,58px)}
-.auth-intro p{margin-bottom:0}
-.auth-footer{background:#f8fafce8;color:#52647a;border-top:1px solid #142c491b}
-@media(min-width:761px) and (max-height:780px){.auth-login .auth-intro{padding-top:20px}}
+
+/* Natural full-viewport campus photography with a continuous, directional light wash. */
+.auth{background:#f3f7fa}
+.auth:before{content:"";display:block;position:absolute;inset:0;width:auto;height:auto;z-index:-2;background:url("assets/neu-main-campus.jpg") center top/cover no-repeat;opacity:.90;filter:blur(.9px);mask-image:none;mask-composite:add;pointer-events:none}
+.auth:after{content:"";position:absolute;inset:0;z-index:-1;mask-image:none;background:repeating-radial-gradient(ellipse at 110% -25%,transparent 0 130px,#28558105 131px 132px,transparent 133px 170px),linear-gradient(90deg,transparent 0%,transparent 48%,#f8fafc70 72%,#f8fafce8 100%),linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 23%,#f3f7fae8 43%,#f3f7fad9 51%,#f3f7fa8c 69%,#f3f7fa68 89%,#f3f7fad9 100%);pointer-events:none}
+.auth-intro{align-self:start;padding-top:clamp(18px,4vh,42px)}
+.auth-intro .eyebrow{color:#204e7a}
+.auth-intro h1{color:#142c49}
+.auth-intro h1 span{color:#285581}
+.auth-intro p{color:#243d55;font-weight:500;margin-bottom:0;line-height:1.75}
+.auth-footer{background:transparent;color:#243d55;border-top:1px solid #142c4926}
+@media(min-width:761px) and (max-height:780px){
+ .auth-login .auth-intro{padding-top:12px}
+ .auth:after{background:linear-gradient(90deg,transparent 0%,transparent 48%,#f8fafc70 72%,#f8fafce8 100%),linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 32%,#f3f7fae8 52%,#f3f7fad9 61%,#f3f7fa78 82%,#f3f7fad9 100%)}
+}
 @media(max-width:760px){
- .auth:before{inset:100px 0 auto;width:100%;height:420px;background-position:50% 58%;opacity:.34;filter:blur(1px);mask-image:linear-gradient(to bottom,transparent 0%,#000 48%,transparent 100%);mask-composite:add}
+ .auth:before{inset:0;width:auto;height:auto;background-position:42% top;background-size:auto max(580px,65vh);opacity:.80;filter:blur(.9px)}
+ .auth:after{background:linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 15%,#f3f7fad9 28%,#f3f7fab3 42%,#f3f7faf5 67%,#f3f7fa 100%)}
  .auth-intro{padding-top:0;padding-bottom:22px}
 }
