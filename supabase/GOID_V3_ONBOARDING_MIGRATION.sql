@@ -44,6 +44,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS goid_profile_version intege
  ADD COLUMN IF NOT EXISTS goid_preferences_version integer NOT NULL DEFAULT 0;
 CREATE OR REPLACE FUNCTION public.goid_new_profile_version_v3() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
 BEGIN
+ NEW.goid_profile_version:=0;
+ NEW.goid_preferences_version:=0;
  IF NEW.role='student' AND nullif(btrim(NEW.first_name),'') IS NOT NULL AND nullif(btrim(NEW.last_name),'') IS NOT NULL
  AND public.goid_valid_college(NEW.campus,NEW.college) AND nullif(btrim(NEW.year_level),'') IS NOT NULL
  AND nullif(btrim(NEW.affiliation),'') IS NOT NULL AND NEW.privacy_acknowledged_at IS NOT NULL THEN
@@ -83,15 +85,22 @@ CREATE INDEX IF NOT EXISTS goid_activity_created_v3_idx ON public.activity_log(c
 
 -- Archive decisions are administrator-only and recorded separately from ordinary report review.
 ALTER TABLE public.opportunity_reports ADD COLUMN IF NOT EXISTS archive_decision text,
- ADD COLUMN IF NOT EXISTS archive_decision_note text;
+ ADD COLUMN IF NOT EXISTS archive_decision_note text,
+ ADD COLUMN IF NOT EXISTS archive_requested boolean NOT NULL DEFAULT false;
+CREATE OR REPLACE FUNCTION public.goid_request_archive(p_id uuid,p_note text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+BEGIN
+ IF coalesce(public.neu_role(),'') NOT IN ('staff','admin') THEN RAISE EXCEPTION 'Staff required' USING ERRCODE='42501'; END IF;
+ IF nullif(btrim(p_note),'') IS NULL THEN RAISE EXCEPTION 'Reason required'; END IF;
+ INSERT INTO public.opportunity_reports(opportunity_id,user_id,issue_type,description,archive_requested) VALUES(p_id,auth.uid(),'Other',left('Archive request: '||p_note,1000),true);
+END $;
 CREATE OR REPLACE FUNCTION public.goid_archive_decision_guard_v3() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $
 BEGIN
  IF current_user IN ('anon','authenticated') THEN
   IF TG_OP='INSERT' THEN
-   IF NEW.archive_decision IS NOT NULL OR NEW.archive_decision_note IS NOT NULL THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
+   IF NEW.archive_requested OR NEW.archive_decision IS NOT NULL OR NEW.archive_decision_note IS NOT NULL THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
   ELSE
-   IF NEW.archive_decision IS DISTINCT FROM OLD.archive_decision OR NEW.archive_decision_note IS DISTINCT FROM OLD.archive_decision_note THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
-   IF OLD.description LIKE 'Archive request: %' AND NEW.status IS DISTINCT FROM OLD.status THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
+   IF NEW.archive_requested IS DISTINCT FROM OLD.archive_requested OR NEW.archive_decision IS DISTINCT FROM OLD.archive_decision OR NEW.archive_decision_note IS DISTINCT FROM OLD.archive_decision_note THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
+   IF (OLD.archive_requested OR (OLD.issue_type='Other' AND OLD.description LIKE 'Archive request: %' AND EXISTS(SELECT 1 FROM public.profiles p WHERE p.id=OLD.user_id AND p.role IN ('staff','admin')))) AND NEW.status IS DISTINCT FROM OLD.status THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
   END IF;
  END IF;
  RETURN NEW;
@@ -104,7 +113,7 @@ BEGIN
  IF public.neu_role() IS DISTINCT FROM 'admin' THEN RAISE EXCEPTION 'Administrator required' USING ERRCODE='42501'; END IF;
  IF p_decision IS NULL OR p_decision NOT IN ('approve','reject') OR nullif(btrim(p_note),'') IS NULL THEN RAISE EXCEPTION 'Choose a decision and provide a note'; END IF;
  SELECT * INTO r FROM public.opportunity_reports WHERE id=p_report FOR UPDATE;
- IF NOT FOUND OR r.status<>'OPEN' OR r.description NOT LIKE 'Archive request: %' OR r.issue_type<>'Other' THEN RAISE EXCEPTION 'Open archive request not found'; END IF;
+ IF NOT FOUND OR r.status<>'OPEN' OR NOT (r.archive_requested OR (r.issue_type='Other' AND r.description LIKE 'Archive request: %' AND EXISTS(SELECT 1 FROM public.profiles p WHERE p.id=r.user_id AND p.role IN ('staff','admin')))) THEN RAISE EXCEPTION 'Open archive request not found'; END IF;
  IF p_decision='approve' THEN PERFORM public.goid_archive_opportunity(r.opportunity_id,'archive'); END IF;
  UPDATE public.opportunity_reports SET status='REVIEWED',archive_decision=CASE p_decision WHEN 'approve' THEN 'APPROVED' ELSE 'REJECTED' END,archive_decision_note=left(btrim(p_note),1000) WHERE id=p_report;
  INSERT INTO public.activity_log(actor_id,entity,entity_id,action,details) VALUES(auth.uid(),'opportunity',r.opportunity_id,upper(p_decision)||' ARCHIVE REQUEST',left(btrim(p_note),1000));
