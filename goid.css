@@ -214,14 +214,15 @@ tbody tr:hover td{background:#f8fafc}
 
 
 
-/* Full-viewport campus background: original photograph, gentle detail enhancement, localized light wash. */
+
+/* Soft campus backdrop: text and sign-in card remain the focal points. */
 .auth{background:#f3f7fa}
-.auth:before{content:"";display:block;position:absolute;inset:0;width:auto;height:auto;z-index:-2;background-image:url("assets/neu-main-campus-enhanced.svg"),url("assets/neu-main-campus.jpg");background-position:center 57%;background-size:cover;background-repeat:no-repeat;opacity:.88;filter:saturate(.88) contrast(1.025);mask-image:none;mask-composite:add;pointer-events:none}
+.auth:before{content:"";display:block;position:absolute;inset:-5px;width:auto;height:auto;z-index:-2;background-image:url("assets/neu-main-campus.jpg");background-position:center 57%;background-size:cover;background-repeat:no-repeat;opacity:.62;filter:blur(2.8px) saturate(.84) contrast(.96);mask-image:none;mask-composite:add;pointer-events:none}
 .auth:after{content:"";position:absolute;inset:0;z-index:-1;mask-image:none;background:
- repeating-radial-gradient(ellipse at 112% -25%,transparent 0 135px,#28558106 136px 137px,transparent 138px 180px),
- linear-gradient(90deg,transparent 0%,transparent 50%,#f3f7fa55 68%,#f3f7fac9 85%,#f3f7faf0 100%),
- radial-gradient(ellipse 67% 49% at 22% 30%,#f3f7faf7 0%,#f3f7faf0 28%,#f3f7fad9 46%,#f3f7fa88 67%,#f3f7fa22 88%,transparent 100%),
- linear-gradient(180deg,#f3f7faf5 0%,#f3f7fac9 14%,#f3f7fa33 38%,#f3f7fa16 61%,#f3f7fa33 79%,#f3f7fad9 100%);pointer-events:none}
+ repeating-radial-gradient(ellipse at 112% -25%,transparent 0 150px,#28558105 151px 152px,transparent 153px 200px),
+ linear-gradient(90deg,#f3f7fa28 0%,#f3f7fa18 42%,#f3f7fa60 65%,#f3f7facc 86%,#f3f7faf0 100%),
+ radial-gradient(ellipse 72% 57% at 24% 32%,#f3f7faf5 0%,#f3f7fae8 30%,#f3f7fac2 52%,#f3f7fa55 79%,transparent 100%),
+ linear-gradient(180deg,#f3f7faf5 0%,#f3f7facc 22%,#f3f7fa66 48%,#f3f7fa44 71%,#f3f7fa88 86%,#f3f7fae8 100%);pointer-events:none}
 .auth-intro{align-self:start;padding-top:clamp(18px,4vh,42px)}
 .auth-intro .eyebrow{color:#204e7a}
 .auth-intro h1{color:#142c49}
@@ -229,17 +230,20 @@ tbody tr:hover td{background:#f8fafc}
 .auth-intro p{color:#243d55;font-weight:500;margin-bottom:0;line-height:1.75}
 .auth-footer{background:transparent;color:#243d55;border-top:1px solid #142c4926}
 @media(prefers-reduced-motion:no-preference){
- .auth:before{animation:goid-campus-reveal .65s ease-out both}
- @keyframes goid-campus-reveal{from{opacity:.60}to{opacity:.88}}
+ .auth:before{animation:goid-campus-soft-reveal .65s ease-out both}
+ @keyframes goid-campus-soft-reveal{from{opacity:0}to{opacity:.62}}
  .auth-login .auth-card{animation:goid-card-reveal .35s ease-out both}
  @keyframes goid-card-reveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 }
 @media(min-width:761px) and (max-height:780px){
  .auth-login .auth-intro{padding-top:12px}
- .auth:after{background:linear-gradient(90deg,transparent 0%,transparent 48%,#f3f7fa70 75%,#f3f7faf0 100%),radial-gradient(ellipse 75% 61% at 23% 36%,#f3f7faf7 0%,#f3f7faf0 35%,#f3f7fac9 59%,#f3f7fa55 80%,transparent 100%),linear-gradient(180deg,#f3f7faf5 0%,#f3f7fa55 40%,#f3f7fa20 70%,#f3f7fad9 100%)}
 }
 @media(max-width:760px){
- .auth:before{inset:0;width:auto;height:auto;background-position:42% top;background-size:auto max(580px,65vh)}
- .auth:after{background:linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 17%,#f3f7fac9 32%,#f3f7fa80 44%,#f3f7faed 68%,#f3f7fa 100%)}
+ .auth:before{inset:-5px;width:auto;height:auto;background-position:42% top;background-size:auto max(580px,65vh);opacity:.56;filter:blur(2.4px) saturate(.84) contrast(.96)}
+ .auth:after{background:linear-gradient(180deg,#f3f7faf5 0%,#f3f7fae8 18%,#f3f7fabc 35%,#f3f7fa80 52%,#f3f7fae8 74%,#f3f7fa 100%)}
  .auth-intro{padding-top:0;padding-bottom:22px}
+}
+@media(max-width:760px) and (prefers-reduced-motion:no-preference){
+ .auth:before{animation-name:goid-campus-soft-mobile-reveal}
+ @keyframes goid-campus-soft-mobile-reveal{from{opacity:0}to{opacity:.56}}
 }
