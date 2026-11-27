@@ -213,22 +213,33 @@ tbody tr:hover td{background:#f8fafc}
 
 
 
-/* Natural full-viewport campus photography with a continuous, directional light wash. */
+
+/* Full-viewport campus background: original photograph, gentle detail enhancement, localized light wash. */
 .auth{background:#f3f7fa}
-.auth:before{content:"";display:block;position:absolute;inset:0;width:auto;height:auto;z-index:-2;background:url("assets/neu-main-campus.jpg") center top/cover no-repeat;opacity:.90;filter:blur(.9px);mask-image:none;mask-composite:add;pointer-events:none}
-.auth:after{content:"";position:absolute;inset:0;z-index:-1;mask-image:none;background:repeating-radial-gradient(ellipse at 110% -25%,transparent 0 130px,#28558105 131px 132px,transparent 133px 170px),linear-gradient(90deg,transparent 0%,transparent 48%,#f8fafc70 72%,#f8fafce8 100%),linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 23%,#f3f7fae8 43%,#f3f7fad9 51%,#f3f7fa8c 69%,#f3f7fa68 89%,#f3f7fad9 100%);pointer-events:none}
+.auth:before{content:"";display:block;position:absolute;inset:0;width:auto;height:auto;z-index:-2;background-image:url("assets/neu-main-campus-enhanced.svg"),url("assets/neu-main-campus.jpg");background-position:center 57%;background-size:cover;background-repeat:no-repeat;opacity:.88;filter:saturate(.88) contrast(1.025);mask-image:none;mask-composite:add;pointer-events:none}
+.auth:after{content:"";position:absolute;inset:0;z-index:-1;mask-image:none;background:
+ repeating-radial-gradient(ellipse at 112% -25%,transparent 0 135px,#28558106 136px 137px,transparent 138px 180px),
+ linear-gradient(90deg,transparent 0%,transparent 50%,#f3f7fa55 68%,#f3f7fac9 85%,#f3f7faf0 100%),
+ radial-gradient(ellipse 67% 49% at 22% 30%,#f3f7faf7 0%,#f3f7faf0 28%,#f3f7fad9 46%,#f3f7fa88 67%,#f3f7fa22 88%,transparent 100%),
+ linear-gradient(180deg,#f3f7faf5 0%,#f3f7fac9 14%,#f3f7fa33 38%,#f3f7fa16 61%,#f3f7fa33 79%,#f3f7fad9 100%);pointer-events:none}
 .auth-intro{align-self:start;padding-top:clamp(18px,4vh,42px)}
 .auth-intro .eyebrow{color:#204e7a}
 .auth-intro h1{color:#142c49}
 .auth-intro h1 span{color:#285581}
 .auth-intro p{color:#243d55;font-weight:500;margin-bottom:0;line-height:1.75}
 .auth-footer{background:transparent;color:#243d55;border-top:1px solid #142c4926}
+@media(prefers-reduced-motion:no-preference){
+ .auth:before{animation:goid-campus-reveal .65s ease-out both}
+ @keyframes goid-campus-reveal{from{opacity:.60}to{opacity:.88}}
+ .auth-login .auth-card{animation:goid-card-reveal .35s ease-out both}
+ @keyframes goid-card-reveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+}
 @media(min-width:761px) and (max-height:780px){
  .auth-login .auth-intro{padding-top:12px}
- .auth:after{background:linear-gradient(90deg,transparent 0%,transparent 48%,#f8fafc70 72%,#f8fafce8 100%),linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 32%,#f3f7fae8 52%,#f3f7fad9 61%,#f3f7fa78 82%,#f3f7fad9 100%)}
+ .auth:after{background:linear-gradient(90deg,transparent 0%,transparent 48%,#f3f7fa70 75%,#f3f7faf0 100%),radial-gradient(ellipse 75% 61% at 23% 36%,#f3f7faf7 0%,#f3f7faf0 35%,#f3f7fac9 59%,#f3f7fa55 80%,transparent 100%),linear-gradient(180deg,#f3f7faf5 0%,#f3f7fa55 40%,#f3f7fa20 70%,#f3f7fad9 100%)}
 }
 @media(max-width:760px){
- .auth:before{inset:0;width:auto;height:auto;background-position:42% top;background-size:auto max(580px,65vh);opacity:.80;filter:blur(.9px)}
- .auth:after{background:linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 15%,#f3f7fad9 28%,#f3f7fab3 42%,#f3f7faf5 67%,#f3f7fa 100%)}
+ .auth:before{inset:0;width:auto;height:auto;background-position:42% top;background-size:auto max(580px,65vh)}
+ .auth:after{background:linear-gradient(180deg,#f3f7faf5 0%,#f3f7faf0 17%,#f3f7fac9 32%,#f3f7fa80 44%,#f3f7faed 68%,#f3f7fa 100%)}
  .auth-intro{padding-top:0;padding-bottom:22px}
 }
