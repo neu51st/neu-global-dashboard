@@ -87,13 +87,13 @@ CREATE INDEX IF NOT EXISTS goid_activity_created_v3_idx ON public.activity_log(c
 ALTER TABLE public.opportunity_reports ADD COLUMN IF NOT EXISTS archive_decision text,
  ADD COLUMN IF NOT EXISTS archive_decision_note text,
  ADD COLUMN IF NOT EXISTS archive_requested boolean NOT NULL DEFAULT false;
-CREATE OR REPLACE FUNCTION public.goid_request_archive(p_id uuid,p_note text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+CREATE OR REPLACE FUNCTION public.goid_request_archive(p_id uuid,p_note text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $goid_request_archive$
 BEGIN
  IF coalesce(public.neu_role(),'') NOT IN ('staff','admin') THEN RAISE EXCEPTION 'Staff required' USING ERRCODE='42501'; END IF;
  IF nullif(btrim(p_note),'') IS NULL THEN RAISE EXCEPTION 'Reason required'; END IF;
  INSERT INTO public.opportunity_reports(opportunity_id,user_id,issue_type,description,archive_requested) VALUES(p_id,auth.uid(),'Other',left('Archive request: '||p_note,1000),true);
-END $;
-CREATE OR REPLACE FUNCTION public.goid_archive_decision_guard_v3() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $
+END $goid_request_archive$;
+CREATE OR REPLACE FUNCTION public.goid_archive_decision_guard_v3() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $goid_archive_decision_guard_v3$
 BEGIN
  IF current_user IN ('anon','authenticated') THEN
   IF TG_OP='INSERT' THEN
@@ -104,10 +104,10 @@ BEGIN
   END IF;
  END IF;
  RETURN NEW;
-END $;
+END $goid_archive_decision_guard_v3$;
 DROP TRIGGER IF EXISTS goid_archive_decision_guard_v3_trigger ON public.opportunity_reports;
 CREATE TRIGGER goid_archive_decision_guard_v3_trigger BEFORE INSERT OR UPDATE ON public.opportunity_reports FOR EACH ROW EXECUTE FUNCTION public.goid_archive_decision_guard_v3();
-CREATE OR REPLACE FUNCTION public.goid_decide_archive_v3(p_report uuid,p_decision text,p_note text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+CREATE OR REPLACE FUNCTION public.goid_decide_archive_v3(p_report uuid,p_decision text,p_note text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $goid_decide_archive_v3$
 DECLARE r public.opportunity_reports%ROWTYPE;
 BEGIN
  IF public.neu_role() IS DISTINCT FROM 'admin' THEN RAISE EXCEPTION 'Administrator required' USING ERRCODE='42501'; END IF;
@@ -118,7 +118,7 @@ BEGIN
  UPDATE public.opportunity_reports SET status='REVIEWED',archive_decision=CASE p_decision WHEN 'approve' THEN 'APPROVED' ELSE 'REJECTED' END,archive_decision_note=left(btrim(p_note),1000) WHERE id=p_report;
  INSERT INTO public.activity_log(actor_id,entity,entity_id,action,details) VALUES(auth.uid(),'opportunity',r.opportunity_id,upper(p_decision)||' ARCHIVE REQUEST',left(btrim(p_note),1000));
  PERFORM public.goid_emit(r.user_id,'archive_decision','Archive request decision',upper(p_decision)||' · '||left(btrim(p_note),300),'requests','archive-decision:'||p_report::text);
-END $;
+END $goid_decide_archive_v3$;
 REVOKE ALL ON FUNCTION public.goid_archive_decision_guard_v3(),public.goid_decide_archive_v3(uuid,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.goid_decide_archive_v3(uuid,text,text) TO authenticated;
 
