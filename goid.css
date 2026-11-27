@@ -252,3 +252,51 @@ tbody tr:hover td{background:#f8fafc}
 .auth-header .auth-brand-text>span{padding-inline-start:8px}
 @media(min-width:761px) and (max-height:780px){.auth-login .auth-header .auth-brand-text>span{padding-inline-start:7px}}
 @media(max-width:760px){.auth-header .auth-brand-text>span{padding-inline-start:6px}}
+
+/* Login hero motion: lightweight, transparent, restrained and optional. */
+.auth-motion{position:relative;max-width:490px;margin:27px 0 0;color:#285581}
+.auth-opportunity-showcase{border-left:2px solid #b59b58;padding:3px 0 2px 15px;text-align:left}
+.auth-showcase-caption{font-size:10px;font-weight:700;letter-spacing:.15em;color:#425d76;line-height:1.45}
+.auth-opportunity-cycle{position:relative;min-height:38px;margin-top:7px;overflow:hidden}
+.auth-opportunity-cycle>span{position:absolute;inset:0;font-size:clamp(17px,1.7vw,24px);line-height:1.3;font-weight:650;letter-spacing:-.025em;opacity:0;animation:goid-opportunity-cycle 12s linear infinite}
+.auth-opportunity-cycle>span:nth-child(2){animation-delay:3s}
+.auth-opportunity-cycle>span:nth-child(3){animation-delay:6s}
+.auth-opportunity-cycle>span:nth-child(4){animation-delay:9s}
+@keyframes goid-opportunity-cycle{0%{opacity:0;transform:translateY(6px)}4%,20%{opacity:1;transform:translateY(0)}25%,100%{opacity:0;transform:translateY(-6px)}}
+.auth-global-connections{display:block;width:min(100%,395px);height:auto;margin:14px 0 0;color:#285581;opacity:.64;overflow:visible;pointer-events:none}
+.auth-connection-paths{animation:goid-path-flow 15s linear infinite}
+@keyframes goid-path-flow{to{stroke-dashoffset:-100}}
+.auth-connection-pulse{transform-box:fill-box;transform-origin:center;animation:goid-node-pulse 3.2s ease-out infinite}
+@keyframes goid-node-pulse{0%{opacity:.3;transform:scale(.55)}65%,100%{opacity:0;transform:scale(1.8)}}
+.auth-motion-toggle,.auth-motion-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.auth-motion-label{display:inline-flex;align-items:center;gap:5px;position:absolute;top:-3px;right:0;min-height:24px;padding:2px 5px;font-size:10px;color:#425d76;cursor:pointer;border-radius:4px}
+.auth-motion-toggle:focus-visible+.auth-motion-label{outline:2px solid #285581;outline-offset:2px}
+.motion-pause-icon{width:8px;height:10px;border-inline:2px solid currentColor}
+.motion-label-resume{display:none}
+.auth-motion-toggle:checked+.auth-motion-label .motion-label-pause{display:none}
+.auth-motion-toggle:checked+.auth-motion-label .motion-label-resume{display:inline}
+.auth-motion-toggle:checked+.auth-motion-label .motion-pause-icon{width:0;height:0;border:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid currentColor}
+.auth-motion-toggle:checked~.auth-opportunity-showcase .auth-opportunity-cycle>span,
+.auth-motion-toggle:checked~.auth-global-connections .auth-connection-paths,
+.auth-motion-toggle:checked~.auth-global-connections .auth-connection-pulse{animation-play-state:paused}
+@media(min-width:761px) and (max-height:780px){
+ .auth-motion{margin-top:20px}
+ .auth-global-connections{width:min(100%,335px);margin-top:8px}
+}
+@media(max-width:760px){
+ .auth-motion{margin:17px auto 0;max-width:390px}
+ .auth-opportunity-showcase{padding-left:12px}
+ .auth-showcase-caption{font-size:9px;letter-spacing:.09em}
+ .auth-opportunity-cycle{min-height:42px;margin-top:5px}
+ .auth-opportunity-cycle>span{font-size:18px}
+ .auth-global-connections{width:min(100%,280px);margin:5px auto 0}
+ .auth-motion-label{min-height:28px;font-size:9px}
+}
+@media(max-width:350px){.auth-showcase-caption{max-width:135px}.auth-opportunity-cycle>span{font-size:16px}}
+@media(prefers-reduced-motion:reduce){
+ .auth-motion-label,.auth-motion-toggle{display:none}
+ .auth-opportunity-cycle>span{animation:none}
+ .auth-opportunity-cycle>span:first-child{opacity:1}
+ .auth-connection-paths,.auth-connection-pulse{animation:none}
+ .auth-connection-pulse{opacity:0}
+}
