@@ -255,7 +255,7 @@ tbody tr:hover td{background:#f8fafc}
 
 
 /* Login hero motion: centered, legible, transparent and responsive. */
-.auth-motion{position:relative;width:100%;max-width:none;margin:35px 0 0;color:#285581}
+.auth-motion{position:relative;width:100%;max-width:490px;margin:35px 0 0;color:#285581}
 .auth-opportunity-showcase{border-left:2px solid #b59b58;padding:3px 0 2px 15px;text-align:left}
 .auth-showcase-caption{font-size:10px;font-weight:700;letter-spacing:.15em;color:#425d76;line-height:1.45}
 .auth-opportunity-cycle{position:relative;min-height:40px;margin-top:7px;overflow:hidden}
@@ -264,8 +264,8 @@ tbody tr:hover td{background:#f8fafc}
 .auth-opportunity-cycle>span:nth-child(3){animation-delay:6s}
 .auth-opportunity-cycle>span:nth-child(4){animation-delay:9s}
 @keyframes goid-opportunity-cycle{0%{opacity:0;transform:translateY(6px)}4%,20%{opacity:1;transform:translateY(0)}25%,100%{opacity:0;transform:translateY(-6px)}}
-.auth-global-connections{display:block;width:min(100%,490px);height:auto;margin:27px auto 0;color:#234f79;opacity:.87;overflow:visible;pointer-events:none}
-.auth-connection-paths{animation:goid-path-flow 15s linear infinite}
+.auth-global-connections{display:block;width:100%;height:auto;margin:25px auto 0;color:#285581;opacity:1;overflow:visible;pointer-events:none}
+.auth-connection-paths{animation:goid-path-flow 18s linear infinite}
 @keyframes goid-path-flow{to{stroke-dashoffset:-100}}
 .auth-connection-pulse{transform-box:fill-box;transform-origin:center;animation:goid-node-pulse 3.2s ease-out infinite}
 @keyframes goid-node-pulse{0%{opacity:.3;transform:scale(.55)}65%,100%{opacity:0;transform:scale(1.8)}}
@@ -273,7 +273,7 @@ tbody tr:hover td{background:#f8fafc}
 .auth-motion:hover .auth-opportunity-cycle>span,.auth-motion:hover .auth-connection-paths,.auth-motion:hover .auth-connection-pulse{animation-play-state:paused}
 @media(min-width:761px) and (max-height:780px){
  .auth-motion{margin-top:25px}
- .auth-global-connections{width:min(100%,410px);margin-top:17px}
+ .auth-global-connections{width:min(100%,410px);margin-top:18px}
 }
 @media(max-width:760px){
  .auth-motion{margin:23px auto 0;max-width:460px}
@@ -281,7 +281,7 @@ tbody tr:hover td{background:#f8fafc}
  .auth-showcase-caption{font-size:9px;letter-spacing:.09em}
  .auth-opportunity-cycle{min-height:42px;margin-top:5px}
  .auth-opportunity-cycle>span{font-size:18px}
- .auth-global-connections{width:min(100%,340px);margin:17px auto 0}
+ .auth-global-connections{width:min(100%,390px);margin:20px auto 0}
 }
 @media(max-width:350px){.auth-opportunity-cycle>span{font-size:16px}}
 @media(prefers-reduced-motion:reduce){
