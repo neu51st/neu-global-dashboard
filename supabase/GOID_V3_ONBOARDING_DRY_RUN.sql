@@ -80,6 +80,39 @@ REVOKE ALL ON FUNCTION public.goid_new_profile_version_v3() FROM PUBLIC,anon,aut
 REVOKE ALL ON FUNCTION public.goid_complete_profile_v3(jsonb),public.goid_save_preferences_v3(jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.goid_complete_profile_v3(jsonb),public.goid_save_preferences_v3(jsonb) TO authenticated;
 CREATE INDEX IF NOT EXISTS goid_activity_created_v3_idx ON public.activity_log(created_at DESC);
+
+-- Archive decisions are administrator-only and recorded separately from ordinary report review.
+ALTER TABLE public.opportunity_reports ADD COLUMN IF NOT EXISTS archive_decision text,
+ ADD COLUMN IF NOT EXISTS archive_decision_note text;
+CREATE OR REPLACE FUNCTION public.goid_archive_decision_guard_v3() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $
+BEGIN
+ IF current_user IN ('anon','authenticated') THEN
+  IF TG_OP='INSERT' THEN
+   IF NEW.archive_decision IS NOT NULL OR NEW.archive_decision_note IS NOT NULL THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
+  ELSE
+   IF NEW.archive_decision IS DISTINCT FROM OLD.archive_decision OR NEW.archive_decision_note IS DISTINCT FROM OLD.archive_decision_note THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
+   IF OLD.description LIKE 'Archive request: %' AND NEW.status IS DISTINCT FROM OLD.status THEN RAISE EXCEPTION 'Use the authorized archive decision function' USING ERRCODE='42501'; END IF;
+  END IF;
+ END IF;
+ RETURN NEW;
+END $;
+DROP TRIGGER IF EXISTS goid_archive_decision_guard_v3_trigger ON public.opportunity_reports;
+CREATE TRIGGER goid_archive_decision_guard_v3_trigger BEFORE INSERT OR UPDATE ON public.opportunity_reports FOR EACH ROW EXECUTE FUNCTION public.goid_archive_decision_guard_v3();
+CREATE OR REPLACE FUNCTION public.goid_decide_archive_v3(p_report uuid,p_decision text,p_note text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $
+DECLARE r public.opportunity_reports%ROWTYPE;
+BEGIN
+ IF public.neu_role() IS DISTINCT FROM 'admin' THEN RAISE EXCEPTION 'Administrator required' USING ERRCODE='42501'; END IF;
+ IF p_decision IS NULL OR p_decision NOT IN ('approve','reject') OR nullif(btrim(p_note),'') IS NULL THEN RAISE EXCEPTION 'Choose a decision and provide a note'; END IF;
+ SELECT * INTO r FROM public.opportunity_reports WHERE id=p_report FOR UPDATE;
+ IF NOT FOUND OR r.status<>'OPEN' OR r.description NOT LIKE 'Archive request: %' OR r.issue_type<>'Other' THEN RAISE EXCEPTION 'Open archive request not found'; END IF;
+ IF p_decision='approve' THEN PERFORM public.goid_archive_opportunity(r.opportunity_id,'archive'); END IF;
+ UPDATE public.opportunity_reports SET status='REVIEWED',archive_decision=CASE p_decision WHEN 'approve' THEN 'APPROVED' ELSE 'REJECTED' END,archive_decision_note=left(btrim(p_note),1000) WHERE id=p_report;
+ INSERT INTO public.activity_log(actor_id,entity,entity_id,action,details) VALUES(auth.uid(),'opportunity',r.opportunity_id,upper(p_decision)||' ARCHIVE REQUEST',left(btrim(p_note),1000));
+ PERFORM public.goid_emit(r.user_id,'archive_decision','Archive request decision',upper(p_decision)||' · '||left(btrim(p_note),300),'requests','archive-decision:'||p_report::text);
+END $;
+REVOKE ALL ON FUNCTION public.goid_archive_decision_guard_v3(),public.goid_decide_archive_v3(uuid,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.goid_decide_archive_v3(uuid,text,text) TO authenticated;
+
 -- Compare original columns only, so newly added columns do not cause false mismatches.
 -- A count or content mismatch aborts the entire transaction before COMMIT.
 DO $goid_guard_verify$
