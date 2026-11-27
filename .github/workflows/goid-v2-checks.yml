@@ -21,4 +21,4 @@ jobs:
       - name: Verify release safeguards and required features
         run: node scripts/verify-goid-release.mjs
       - name: Test matching and campus directory
-        run: node --test tests/goid-model.test.mjs
+        run: node --test tests/goid-model.test.mjs tests/goid-dashboard.test.mjs
