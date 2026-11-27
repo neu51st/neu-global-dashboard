@@ -210,3 +210,20 @@ tbody tr:hover td{background:#f8fafc}
  .hero:after,.overview-hero:after{opacity:.15}
  .auth-footer{padding-top:6px}
 }
+
+/* Final login photo refinement: independent visual area, no overlapping artwork. */
+.auth{background:linear-gradient(115deg,#f0f5f9 0%,#f7f9fc 57%,#fff 100%)}
+.auth:before{display:none}
+.auth:after{background:repeating-radial-gradient(ellipse at 110% -22%,transparent 0 115px,#28558106 116px 117px,transparent 118px 150px);mask-image:linear-gradient(to left,#000,transparent 60%)}
+.auth-intro{align-self:center;padding-top:0}
+.auth-intro p{margin-bottom:0}
+.auth-campus-photo{position:relative;isolation:isolate;width:100%;height:clamp(180px,28vh,270px);margin:25px 0 0;overflow:hidden;background:transparent}
+.auth-campus-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 56%;filter:blur(1.25px);opacity:.76;mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 85%,transparent 100%),linear-gradient(to right,#000 0%,#000 87%,transparent 100%);mask-composite:intersect}
+.auth-campus-photo figcaption{position:absolute;left:12px;bottom:15px;padding:5px 9px;border-radius:3px;background:#142c49d9;color:#fff;font-size:9px;font-weight:600;letter-spacing:.13em}
+.auth-footer{background:#f8fafc;color:#52647a;border-top:1px solid #142c491b}
+@media(max-width:760px){
+ .auth-intro{padding-top:0}
+ .auth-campus-photo{height:clamp(135px,25vw,200px);margin:16px auto 23px;max-width:460px}
+ .auth-campus-photo img{filter:blur(1px);opacity:.70}
+ .auth-campus-photo figcaption{font-size:8px;bottom:10px}
+}
